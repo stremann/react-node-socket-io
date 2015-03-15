@@ -1,117 +1,88 @@
-'use strict';
-
-var converter = new Showdown.converter();
-
-var Comment = React.createClass({
-  render: function() {
-    var rawMarkup = converter.makeHtml(this.props.children.toString());
-    return (
-      <div className="comment">
-        <h2 className="commentAuthor">
-          {this.props.author}
-        </h2>
-        <span dangerouslySetInnerHTML={{__html: rawMarkup}} />
-      </div>
-    );
-  }
-});
-
-var CommentList = React.createClass({
-  render: function() {
-    var commentNodes = this.props.data.map(function(comment, index) {
-      return (
-        // `key` is a React-specific concept and is not mandatory for the
-        // purpose of this tutorial. if you're curious, see more here:
-        // http://facebook.github.io/react/docs/multiple-components.html#dynamic-children
-        <Comment author={comment.author} key={index}>
-          {comment.text}
-        </Comment>
-      );
-    });
-    return (
-      <div className="commentList">
-        {commentNodes}
-      </div>
-    );
-  }
-});
-
-var CommentForm = React.createClass({
-  handleSubmit: function(e) {
-    e.preventDefault();
-    var author = this.refs.author.getDOMNode().value.trim();
-    var text = this.refs.text.getDOMNode().value.trim();
-    if (!text || !author) {
-      return;
-    }
-    this.props.onCommentSubmit({author: author, text: text});
-    this.refs.author.getDOMNode().value = '';
-    this.refs.text.getDOMNode().value = '';
-  },
-  render: function() {
-    return (
-      <form className="commentForm" onSubmit={this.handleSubmit}>
-        <input type="text" placeholder="Your name" ref="author" />
-        <input type="text" placeholder="Say something..." ref="text" />
-        <input type="submit" value="Post" />
-      </form>
-    );
-  }
-});
-
 var CommentBox = React.createClass({
-    loadCommentsFromServer: function() {
-        $.ajax({
-            url: this.props.url,
-            dataType: 'json',
-            success: function(data) {
-                this.setState({data: data});
-            }.bind(this),
-            error: function(xhr, status, err) {
-                console.error(this.props.url, status, err.toString());
-            }.bind(this)
+    getInitialState: function () {
+        return {
+            comments: null
+        };
+    },
+    componentDidMount: function () {
+        var that = this;
+        this.socket = io();
+        this.socket.on('comments', function (comments) {
+            that.setState({ comments: comments });
         });
+        this.socket.emit('fetchComments');
     },
-    handleCommentSubmit: function(comment) {
-        var comments = this.state.data;
-        comments.push(comment);
-        this.setState({data: comments}, function() {
-            // `setState` accepts a callback. To avoid (improbable) race condition,
-            // `we'll send the ajax request right after we optimistically set the new
-            // `state.
-            $.ajax({
-                url: this.props.url,
-                dataType: 'json',
-                type: 'POST',
-                data: comment,
-                success: function(data) {
-                    this.setState({data: data});
-                }.bind(this),
-                error: function(xhr, status, err) {
-                    console.error(this.props.url, status, err.toString());
-                }.bind(this)
-            });
+    submitComment: function (comment, callback) {
+        this.socket.emit('newComment', comment, function (err) {
+            if (err)
+                return console.error('New comment error:', err);
+            callback();
         });
-    },
-    getInitialState: function() {
-        return {data: []};
-    },
-    componentDidMount: function() {
-        this.loadCommentsFromServer();
-        setInterval(this.loadCommentsFromServer, this.props.pollInterval);
     },
     render: function() {
         return (
             <div className="commentBox">
-                <h2>Comments</h2>
-                <CommentList data={this.state.data} />
-                <CommentForm onCommentSubmit={this.handleCommentSubmit} />
+                <h3>Comments:</h3>
+                <CommentList comments={this.state.comments}/>
+                <CommentForm submitComment={this.submitComment}/>
             </div>
+        );
+    }
+});
+var CommentList = React.createClass({
+    render: function () {
+        var Comments = (<div>Loading comments...</div>);
+        if (this.props.comments) {
+            Comments = this.props.comments.map(function (comment) {
+                return (<Comment comment={comment} />);
+            });
+        }
+        return (
+            <div className="commentList">
+				{Comments}
+            </div>
+        );
+    }
+});
+var Comment = React.createClass({
+    render: function () {
+        return (
+            <div className="comment">
+                <span className="author">{this.props.comment.author}</span> said:<br/>
+                <div className="body">{this.props.comment.text}</div>
+            </div>
+        );
+    }
+});
+var CommentForm = React.createClass({
+    handleSubmit: function (e) {
+        e.preventDefault();
+        var that = this;
+        var author = this.refs.author.getDOMNode().value.trim();
+        var text = this.refs.text.getDOMNode().value.trim();
+        var comment = { author: author, text: text };
+        var submitButton = this.refs.submitButton.getDOMNode();
+        submitButton.innerHTML = 'Posting comment...';
+        submitButton.setAttribute('disabled', 'disabled');
+        this.props.submitComment(comment, function (err) {
+            that.refs.author.getDOMNode().value = '';
+            that.refs.text.getDOMNode().value = '';
+            submitButton.innerHTML = 'Post comment';
+            submitButton.removeAttribute('disabled');
+        });
+    },
+    render: function () {
+        return (
+            <form className="commentForm" onSubmit={this.handleSubmit}>
+                <input type="text" name="author" ref="author" placeholder="Name" required /><br/>
+                <textarea name="text" ref="text" placeholder="Comment" required></textarea><br/>
+                <button type="submit" ref="submitButton">Post comment</button>
+            </form>
         );
     }
 });
 
 React.render(
-  <CommentBox url="comments.json" pollInterval={2000} />,
-  document.getElementById('comments')
+    <CommentBox/>,
+    document.getElementById('content')
 );

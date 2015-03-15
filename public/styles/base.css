@@ -1,62 +1,34 @@
 body {
-  background: #fff;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size: 15px;
-  line-height: 1.7;
-  margin: 0;
-  padding: 30px;
+    background: #ddd;
+    padding: 0;
+    margin: 0;
 }
 
-a {
-  color: #4183c4;
-  text-decoration: none;
+#content {
+    background: white;
+    padding: 50px;
+    width: 600px;
+    margin: auto;
 }
 
-a:hover {
-  text-decoration: underline;
+.comment {
+    border: 1px #ddd solid;
+    padding: 20px;
+}
+.comment .author {
+    font-weight: bold;
+}
+.comment .body {
+    padding-top: 5px;
 }
 
-code {
-  background-color: #f8f8f8;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-  font-family: "Bitstream Vera Sans Mono", Consolas, Courier, monospace;
-  font-size: 12px;
-  margin: 0 2px;
-  padding: 0 5px;
+.commentForm {
+    margin-top: 20px;
 }
-
-h1, h2, h3, h4 {
-  font-weight: bold;
-  margin: 0 0 15px;
-  padding: 0;
-}
-
-h1 {
-  border-bottom: 1px solid #ddd;
-  font-size: 2.5em;
-  font-weight: bold;
-  margin: 0 0 15px;
-  padding: 0;
-}
-
-h2 {
-  border-bottom: 1px solid #eee;
-  font-size: 2em;
-}
-
-h3 {
-  font-size: 1.5em;
-}
-
-h4 {
-  font-size: 1.2em;
-}
-
-p, ul {
-  margin: 15px 0;
-}
-
-ul {
-  padding-left: 30px;
+.commentForm input,
+.commentForm textarea {
+    width: 100%;
+    margin-bottom: 5px;
+    border: 1px #ddd solid;
+    padding: 5px;
 }

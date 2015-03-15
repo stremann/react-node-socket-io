@@ -1,34 +1,39 @@
-'use strict';
-
-var fs = require('fs');
 var path = require('path');
+var fs = require('fs');
 var express = require('express');
-var bodyParser = require('body-parser');
+
+// Server part
 var app = express();
-
 app.use('/', express.static(path.join(__dirname, 'public')));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
 
-app.get('/comments.json', function(req, res) {
-  fs.readFile('comments.json', function(err, data) {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(data);
-  });
-});
+var server = app.listen(5000);
+console.log('Server listening on port 5000');
 
-app.post('/comments.json', function(req, res) {
-  fs.readFile('comments.json', function(err, data) {
-    var comments = JSON.parse(data);
-    comments.push(req.body);
-    fs.writeFile('comments.json', JSON.stringify(comments, null, 4), function(err) {
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.send(JSON.stringify(comments));
+// Socket.IO part
+var io = require('socket.io')(server);
+
+var sendComments = function (socket) {
+    fs.readFile('_comments.json', 'utf8', function(err, comments) {
+        comments = JSON.parse(comments);
+        socket.emit('comments', comments);
     });
-  });
+};
+
+io.on('connection', function (socket) {
+    console.log('New client connected!');
+
+    socket.on('fetchComments', function () {
+        sendComments(socket);
+    });
+
+    socket.on('newComment', function (comment, callback) {
+        fs.readFile('_comments.json', 'utf8', function(err, comments) {
+            comments = JSON.parse(comments);
+            comments.push(comment);
+            fs.writeFile('_comments.json', JSON.stringify(comments, null, 4), function (err) {
+                io.emit('comments', comments);
+                callback(err);
+            });
+        });
+    });
 });
-
-app.listen(3000);
-
-console.log('Server started: http://localhost:3000/');
