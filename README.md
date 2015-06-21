@@ -1,16 +1,19 @@
 # Hello React
 
-This example prepared especially for JS-talk in EPAM Systems.
+> It serves static files from `public/` and handle requests to `_comments.json` to fetch or add data
 
-## To use
-
-There is a simple Node.js server implementation included with SocketIO.
-It serves static files from `public/` and handle requests to `_comments.json` to fetch or add data.
-Start a server with the following command:
+### Installation:
 
 ```sh
-npm install
-node server.js
+$ npm install
+$ cd react-node-socket-io
+$ node server.js
 ```
 
-And visit <http://localhost:5000/>.
+> [http://localhost:5000/](http://localhost:5000/)
+
+### Check list:
+
+  - Ad comments on your own
+  - Call your friends to do the same using socketIO
+  - Enjoy
